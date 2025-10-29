@@ -1,0 +1,148 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local gui = Instance.new("ScreenGui")
+gui.Name = "MonoLoader"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.DisplayOrder = 9999
+gui.Parent = player:WaitForChild("PlayerGui")
+
+-- Black Background
+local bg = Instance.new("Frame")
+bg.Size = UDim2.new(1,0,1,0)
+bg.BackgroundColor3 = Color3.new(0,0,0)
+bg.BorderSizePixel = 0
+bg.Parent = gui
+
+-- Title (Arcade font, white with black stroke)
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(0.85,0,0.16,0)
+title.Position = UDim2.new(0.075,0,0.36,0)
+title.BackgroundTransparency = 1
+title.Text = "Loading script please wait..."
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.Arcade
+title.TextScaled = true
+title.TextStrokeTransparency = 0.3
+title.TextStrokeColor3 = Color3.new(0,0,0)
+title.Parent = bg
+
+-- Progress Bar Background (dark gray)
+local barBg = Instance.new("Frame")
+barBg.Size = UDim2.new(0.65,0,0.04,0)
+barBg.Position = UDim2.new(0.175,0,0.69,0)
+barBg.BackgroundColor3 = Color3.fromRGB(25,25,25)
+barBg.BorderSizePixel = 0
+barBg.Parent = bg
+local c1 = Instance.new("UICorner",barBg)
+c1.CornerRadius = UDim.new(0,18)
+local bgStroke = Instance.new("UIStroke",barBg)
+bgStroke.Thickness = 2
+bgStroke.Color = Color3.new(1,1,1)
+bgStroke.Transparency = 0.7
+
+-- Progress Fill (white with gradient)
+local bar = Instance.new("Frame")
+bar.Size = UDim2.new(0,0,1,0)
+bar.BackgroundColor3 = Color3.new(1,1,1)
+bar.BorderSizePixel = 0
+bar.Parent = barBg
+local c2 = Instance.new("UICorner",bar)
+c2.CornerRadius = UDim.new(0,18)
+local barStroke = Instance.new("UIStroke",bar)
+barStroke.Thickness = 3
+barStroke.Color = Color3.new(1,1,1)
+barStroke.Transparency = 0.6
+local barGrad = Instance.new("UIGradient",bar)
+barGrad.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0,Color3.fromRGB(200,200,200)),
+	ColorSequenceKeypoint.new(1,Color3.fromRGB(255,255,255))
+}
+
+-- Percentage (Arcade font, white with black stroke)
+local pct = Instance.new("TextLabel")
+pct.Size = UDim2.new(0.22,0,0.13,0)
+pct.Position = UDim2.new(0.39,0,0.56,0)
+pct.BackgroundTransparency = 1
+pct.Text = "0%"
+pct.TextColor3 = Color3.new(1,1,1)
+pct.Font = Enum.Font.Arcade
+pct.TextScaled = true
+pct.TextStrokeTransparency = 0.3
+pct.TextStrokeColor3 = Color3.new(0,0,0)
+pct.Parent = bg
+local pctGlow = Instance.new("UIStroke",pct)
+pctGlow.Thickness = 3
+pctGlow.Color = Color3.new(1,1,1)
+pctGlow.Transparency = 0.7
+
+-- Falling Chinese/Japanese characters (white, minimalist)
+local chars = {"中","日","本","語","字","落","下","屏","幕","動","畫","加","載","進","度","條","百","分","比","完","成","請","稍","候","腳","本","執","行","等","待","ネ","オ","ン","サ","イ","バ","ー","パ","ン","ク","電","子","都","市"}
+local rain = {}
+
+local function createDrop()
+	local lbl = Instance.new("TextLabel")
+	lbl.Size = UDim2.new(0,math.random(25,45),0,math.random(35,55))
+	lbl.Position = UDim2.new(math.random(),0,0,-60)
+	lbl.BackgroundTransparency = 1
+	lbl.Text = chars[math.random(#chars)]
+	lbl.TextColor3 = Color3.new(1,1,1)
+	lbl.Font = Enum.Font.SourceSansBold
+	lbl.TextScaled = true
+	lbl.TextTransparency = 0
+	lbl.Parent = bg
+	table.insert(rain,lbl)
+	
+	local speed = math.random(4,9)
+	TweenService:Create(lbl,TweenInfo.new(speed,Enum.EasingStyle.Linear),{Position=UDim2.new(lbl.Position.X.Scale,0,1.2,0),TextTransparency=1}):Play()
+	task.delay(speed,function()
+		lbl:Destroy()
+		table.remove(rain,table.find(rain,lbl))
+	end)
+end
+
+RunService.Heartbeat:Connect(function()
+	if math.random() < 0.35 then createDrop() end
+end)
+
+-- Pulse glow on bar & percentage
+spawn(function()
+	while true do
+		TweenService:Create(barStroke,TweenInfo.new(0.8,Enum.EasingStyle.Quad,Enum.EasingDirection.InOut,true),{Transparency=0.3,Thickness=5}):Play()
+		TweenService:Create(pctGlow,TweenInfo.new(0.8,Enum.EasingStyle.Quad,Enum.EasingDirection.InOut,true),{Transparency=0.4,Thickness=5}):Play()
+		task.wait(0.05)
+	end
+end)
+
+-- Gradient rotation on bar
+spawn(function()
+	while true do
+		TweenService:Create(barGrad,TweenInfo.new(1.8,Enum.EasingStyle.Linear,-1),{Rotation=360}):Play()
+		task.wait(0.05)
+	end
+end)
+
+-- 60-second progress
+local start = tick()
+spawn(function()
+	while tick()-start < 60 do
+		local p = (tick()-start)/60
+		local v = math.floor(p*100)
+		pct.Text = v.."%"
+		bar.Size = UDim2.new(p,0,1,0)
+		task.wait(0.05)
+	end
+	pct.Text = "100%"
+	bar.Size = UDim2.new(1,0,1,0)
+	task.wait(0.6)
+	for _,o in {bg,title,barBg,bar,pct} do
+		TweenService:Create(o,TweenInfo.new(0.6),{Transparency=1}):Play()
+	end
+	for _,drop in rain do drop:Destroy() end
+	task.wait(0.7)
+	gui:Destroy()
+end)
