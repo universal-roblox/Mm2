@@ -1,0 +1,733 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/universal-roblox/Mm2/refs/heads/main/mm2"))()
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local controlGui = Instance.new("ScreenGui")
+controlGui.Name = "YukioHubGUI"
+controlGui.ResetOnSpawn = false
+controlGui.DisplayOrder = 999999999
+controlGui.Enabled = true
+controlGui.Parent = game:GetService("CoreGui")
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 200, 0, 300)
+mainFrame.Position = UDim2.new(0, 10, 0.5, -210)
+mainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 15)
+mainFrame.BorderSizePixel = 0
+mainFrame.ZIndex = 1
+mainFrame.ClipsDescendants = true
+mainFrame.Parent = controlGui
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 12)
+mainCorner.Parent = mainFrame
+
+local mainStroke = Instance.new("UIStroke")
+mainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+mainStroke.Color = Color3.fromRGB(255, 40, 55)
+mainStroke.Thickness = 2.5
+mainStroke.Parent = mainFrame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 0, 25)
+titleLabel.Position = UDim2.new(0, 0, 0, 2)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Yukio Hub on Yt"
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 18
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Parent = mainFrame
+
+local titleStroke = Instance.new("UIStroke")
+titleStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+titleStroke.Color = Color3.new(0, 0, 0)
+titleStroke.Thickness = 1
+titleStroke.Parent = titleLabel
+
+-- Drag + resize
+local Drag = {
+	mode = nil,
+	corner = nil,
+	startInput = nil,
+	startPos = nil,
+	startSize = nil,
+	min = Vector2.new(200, 220),
+}
+
+titleLabel.Active = true
+titleLabel.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+		or input.UserInputType == Enum.UserInputType.Touch then
+		Drag.mode = "move"
+		Drag.corner = nil
+		Drag.startInput = input.Position
+		Drag.startPos = mainFrame.Position
+		Drag.startSize = mainFrame.AbsoluteSize
+	end
+end)
+
+local Corners = {
+	{key="tl", pos=UDim2.new(0,0,0,0), anchor=Vector2.new(0,0), rx=-1, ry=-1, mx=1, my=1},
+	{key="tr", pos=UDim2.new(1,0,0,0), anchor=Vector2.new(1,0), rx=1, ry=-1, mx=0, my=1},
+	{key="bl", pos=UDim2.new(0,0,1,0), anchor=Vector2.new(0,1), rx=-1, ry=1, mx=1, my=0},
+	{key="br", pos=UDim2.new(1,0,1,0), anchor=Vector2.new(1,1), rx=1, ry=1, mx=0, my=0},
+}
+
+for _, c in ipairs(Corners) do
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0,16,0,16)
+	btn.Position = c.pos
+	btn.AnchorPoint = c.anchor
+	btn.BackgroundTransparency = 1
+	btn.BorderSizePixel = 0
+	btn.Text = ""
+	btn.AutoButtonColor = false
+	btn.ZIndex = 10
+	btn.Parent = mainFrame
+
+	btn.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
+			Drag.mode = "resize"
+			Drag.corner = c
+			Drag.startInput = input.Position
+			Drag.startPos = mainFrame.Position
+			Drag.startSize = mainFrame.AbsoluteSize
+		end
+	end)
+end
+
+UserInputService.InputChanged:Connect(function(input)
+	if not Drag.mode then return end
+	if input.UserInputType ~= Enum.UserInputType.MouseMovement
+		and input.UserInputType ~= Enum.UserInputType.Touch then return end
+
+	local delta = input.Position - Drag.startInput
+
+	if Drag.mode == "move" then
+		mainFrame.Position = UDim2.new(
+			Drag.startPos.X.Scale,
+			Drag.startPos.X.Offset + delta.X,
+			Drag.startPos.Y.Scale,
+			Drag.startPos.Y.Offset + delta.Y
+		)
+	elseif Drag.mode == "resize" then
+		local c = Drag.corner
+		local newW = math.max(Drag.min.X, Drag.startSize.X + delta.X * c.rx)
+		local newH = math.max(Drag.min.Y, Drag.startSize.Y + delta.Y * c.ry)
+		local appliedDW = newW - Drag.startSize.X
+		local appliedDH = newH - Drag.startSize.Y
+
+		mainFrame.Size = UDim2.new(0,newW,0,newH)
+		mainFrame.Position = UDim2.new(
+			Drag.startPos.X.Scale,
+			Drag.startPos.X.Offset - appliedDW * c.mx,
+			Drag.startPos.Y.Scale,
+			Drag.startPos.Y.Offset - appliedDH * c.my
+		)
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+		or input.UserInputType == Enum.UserInputType.Touch then
+		Drag.mode = nil
+		Drag.corner = nil
+	end
+end)
+
+-- Tabs
+local tabContainer = Instance.new("Frame")
+tabContainer.Size = UDim2.new(0.94,0,0,30)
+tabContainer.Position = UDim2.new(0.03,0,0,30)
+tabContainer.BackgroundTransparency = 1
+tabContainer.Parent = mainFrame
+
+local tabs = {"Control","Items","Misc"}
+local currentTab = "Control"
+local tabFrames = {}
+local tabButtons = {}
+local activeTabPulseTween
+
+local function setActiveTab(tabName)
+	if currentTab == tabName then return end
+
+	if activeTabPulseTween then
+		activeTabPulseTween:Cancel()
+		activeTabPulseTween = nil
+	end
+
+	currentTab = tabName
+
+	for name, data in pairs(tabButtons) do
+		local active = name == tabName
+		TweenService:Create(data.button, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+			BackgroundColor3 = active
+				and Color3.fromRGB(50,50,60)
+				or Color3.fromRGB(40,40,50)
+		}):Play()
+
+		local targetColor = active
+			and Color3.fromRGB(100,100,255)
+			or Color3.fromRGB(80,80,80)
+
+		TweenService:Create(data.stroke, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+			Color = targetColor,
+			Thickness = active and 1.5 or 1
+		}):Play()
+
+		if active then
+			activeTabPulseTween = TweenService:Create(
+				data.stroke,
+				TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+				{
+					Color = targetColor:Lerp(Color3.fromRGB(255,255,255),0.25),
+					Thickness = 2
+				}
+			)
+			activeTabPulseTween:Play()
+		end
+	end
+
+	for name, frame in pairs(tabFrames) do
+		frame.Visible = name == tabName
+	end
+end
+
+for i, tabName in ipairs(tabs) do
+	local tabButton = Instance.new("TextButton")
+	tabButton.Size = UDim2.new(1/#tabs - 0.02,0,1,0)
+	tabButton.Position = UDim2.new((i-1)*(1/#tabs),0,0,0)
+	tabButton.BackgroundColor3 = i == 1
+		and Color3.fromRGB(80,20,25)
+		or Color3.fromRGB(25,25,30)
+	tabButton.BackgroundTransparency = 0.2
+	tabButton.Text = tabName
+	tabButton.Font = Enum.Font.FredokaOne
+	tabButton.TextSize = 10
+	tabButton.TextColor3 = Color3.fromRGB(255,255,255)
+	tabButton.Parent = tabContainer
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0,5)
+	corner.Parent = tabButton
+
+	local stroke = Instance.new("UIStroke")
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Color = i == 1
+		and Color3.fromRGB(255,40,55)
+		or Color3.fromRGB(70,70,75)
+	stroke.Thickness = i == 1 and 1.5 or 1
+	stroke.Transparency = 0.3
+	stroke.Parent = tabButton
+
+	tabButtons[tabName] = {
+		button = tabButton,
+		stroke = stroke
+	}
+
+	local tabFrame = Instance.new("Frame")
+	tabFrame.Size = UDim2.new(0.9,0,1,-75)
+	tabFrame.Position = UDim2.new(0.05,0,0,65)
+	tabFrame.BackgroundTransparency = 1
+	tabFrame.Visible = i == 1
+	tabFrame.Parent = mainFrame
+
+	local layout = Instance.new("UIListLayout")
+	layout.FillDirection = Enum.FillDirection.Vertical
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Padding = UDim.new(0,5)
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.Parent = tabFrame
+
+	tabFrames[tabName] = tabFrame
+
+	tabButton.MouseButton1Click:Connect(function()
+		setActiveTab(tabName)
+	end)
+end
+
+local controlFrame = tabFrames.Control
+local itemsFrame = tabFrames.Items
+local miscFrame = tabFrames.Misc
+
+local function CreateSpace(Frame)
+	local space = Instance.new("Frame")
+	space.Size = UDim2.new(1,0,0,8)
+	space.BackgroundTransparency = 1
+	space.Parent = Frame
+end
+
+local function CreateButton(Frame, Text)
+	local button = Instance.new("TextButton")
+	button.Size = UDim2.new(1,0,0,30)
+	button.BackgroundColor3 = Color3.fromRGB(120,25,35)
+	button.BackgroundTransparency = 0.2
+	button.Text = Text
+	button.Font = Enum.Font.FredokaOne
+	button.TextSize = 14
+	button.TextColor3 = Color3.fromRGB(255,255,255)
+	button.Parent = Frame
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0,5)
+	corner.Parent = button
+
+	local stroke = Instance.new("UIStroke")
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Color = Color3.fromRGB(255,50,65)
+	stroke.Thickness = 1.5
+	stroke.Transparency = 0.3
+	stroke.Parent = button
+
+	-- Intentionally no feature callback.
+	return button
+end
+
+local function CreateToggleButton(Frame, Text)
+	local state = false
+
+	local button = Instance.new("TextButton")
+	button.Size = UDim2.new(0.95,0,0,30)
+	button.BackgroundColor3 = Color3.fromRGB(100,50,150)
+	button.BackgroundTransparency = 0.2
+	button.Text = Text .. ": OFF"
+	button.Font = Enum.Font.FredokaOne
+	button.TextSize = 14
+	button.TextColor3 = Color3.fromRGB(255,255,255)
+	button.Parent = Frame
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0,5)
+	corner.Parent = button
+
+	local stroke = Instance.new("UIStroke")
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Color = Color3.fromRGB(200,100,255)
+	stroke.Thickness = 1.5
+	stroke.Transparency = 0.3
+	stroke.Parent = button
+
+	local onColor = Color3.fromRGB(140,70,200)
+	local offColor = Color3.fromRGB(100,50,150)
+
+	button.MouseButton1Click:Connect(function()
+		-- The toggle remains visually functional, but performs no feature.
+		state = not state
+		TweenService:Create(button, TweenInfo.new(0.15), {
+			BackgroundColor3 = state and onColor or offColor
+		}):Play()
+		button.Text = Text .. (state and ": ON" or ": OFF")
+	end)
+
+	return button
+end
+
+local pulsationTweens = {}
+
+local function createSettingRow(labelText, defaultValue, parent)
+	local row = Instance.new("Frame")
+	row.BackgroundTransparency = 1
+	row.Size = UDim2.new(1,0,0,35)
+	row.Parent = parent
+
+	local layout = Instance.new("UIListLayout")
+	layout.FillDirection = Enum.FillDirection.Vertical
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Padding = UDim.new(0,1)
+	layout.Parent = row
+
+	local heading = Instance.new("TextLabel")
+	heading.Size = UDim2.new(1,0,0,15)
+	heading.BackgroundTransparency = 1
+	heading.Text = labelText
+	heading.Font = Enum.Font.SourceSansSemibold
+	heading.TextSize = 12
+	heading.TextColor3 = Color3.fromRGB(180,180,180)
+	heading.TextXAlignment = Enum.TextXAlignment.Left
+	heading.Parent = row
+
+	local box = Instance.new("TextBox")
+	box.Size = UDim2.new(1,0,0,25)
+	box.BackgroundColor3 = Color3.fromRGB(40,40,50)
+	box.BackgroundTransparency = 0.2
+	box.Text = defaultValue
+	box.Font = Enum.Font.SourceSans
+	box.TextSize = 14
+	box.TextColor3 = Color3.fromRGB(255,255,255)
+	box.ClearTextOnFocus = false
+	box.TextXAlignment = Enum.TextXAlignment.Center
+	box.Parent = row
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0,5)
+	corner.Parent = box
+
+	local stroke = Instance.new("UIStroke")
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Color = Color3.fromRGB(100,100,100)
+	stroke.Thickness = 1
+	stroke.Transparency = 0.5
+	stroke.Parent = box
+
+	box.Focused:Connect(function()
+		if pulsationTweens[box] then
+			pulsationTweens[box]:Cancel()
+		end
+
+		local tween = TweenService:Create(
+			stroke,
+			TweenInfo.new(0.8,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut,-1,true),
+			{
+				Color = Color3.fromRGB(100,100,255):Lerp(Color3.fromRGB(150,150,255),0.5),
+				Thickness = 1.5,
+				Transparency = 0.2
+			}
+		)
+		pulsationTweens[box] = tween
+		tween:Play()
+	end)
+
+	box.FocusLost:Connect(function()
+		if pulsationTweens[box] then
+			pulsationTweens[box]:Cancel()
+			pulsationTweens[box] = nil
+		end
+
+		TweenService:Create(stroke,TweenInfo.new(0.3,Enum.EasingStyle.Quad),{
+			Color = Color3.fromRGB(100,100,100),
+			Thickness = 1,
+			Transparency = 0.5
+		}):Play()
+	end)
+
+	return box
+end
+
+-- ============================================================
+-- CONTROL TAB
+-- ============================================================
+
+local PartnerUserBox = createSettingRow("Username:", "", controlFrame)
+
+CreateSpace(controlFrame)
+
+CreateButton(controlFrame, "Force Trade")
+
+CreateSpace(controlFrame)
+
+CreateToggleButton(controlFrame, "Force Accept")
+
+CreateSpace(controlFrame)
+
+CreateToggleButton(controlFrame, "Auto Trader")
+
+CreateSpace(controlFrame)
+
+CreateToggleButton(controlFrame, "Clear Offer On Accept")
+
+-- ============================================================
+-- ITEMS TAB
+-- ============================================================
+
+local ItemToAddPartnerBox = createSettingRow("Name item to add:", "", itemsFrame)
+
+CreateSpace(itemsFrame)
+
+CreateButton(itemsFrame, "Add Item To Their Offer")
+
+CreateSpace(itemsFrame)
+
+CreateButton(itemsFrame, "Remove last Item in Their Offer")
+
+CreateSpace(itemsFrame)
+
+local weaponListLabel = Instance.new("TextLabel")
+weaponListLabel.Size = UDim2.new(1,0,0,15)
+weaponListLabel.BackgroundTransparency = 1
+weaponListLabel.Text = "Click weapon to ADD directly:"
+weaponListLabel.Font = Enum.Font.SourceSansSemibold
+weaponListLabel.TextSize = 12
+weaponListLabel.TextColor3 = Color3.fromRGB(0,255,100)
+weaponListLabel.TextXAlignment = Enum.TextXAlignment.Left
+weaponListLabel.Parent = itemsFrame
+
+local weaponScrollFrame = Instance.new("ScrollingFrame")
+weaponScrollFrame.Size = UDim2.new(1,0,0,120)
+weaponScrollFrame.BackgroundColor3 = Color3.fromRGB(25,25,35)
+weaponScrollFrame.BackgroundTransparency = 0.3
+weaponScrollFrame.BorderSizePixel = 0
+weaponScrollFrame.ScrollBarThickness = 6
+weaponScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100,100,255)
+weaponScrollFrame.CanvasSize = UDim2.new(0,0,0,0)
+weaponScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+weaponScrollFrame.Parent = itemsFrame
+
+local weaponScrollCorner = Instance.new("UICorner")
+weaponScrollCorner.CornerRadius = UDim.new(0,5)
+weaponScrollCorner.Parent = weaponScrollFrame
+
+local weaponScrollStroke = Instance.new("UIStroke")
+weaponScrollStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+weaponScrollStroke.Color = Color3.fromRGB(80,80,120)
+weaponScrollStroke.Thickness = 1
+weaponScrollStroke.Parent = weaponScrollFrame
+
+local weaponListLayout = Instance.new("UIListLayout")
+weaponListLayout.FillDirection = Enum.FillDirection.Vertical
+weaponListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+weaponListLayout.Padding = UDim.new(0,2)
+weaponListLayout.Parent = weaponScrollFrame
+
+local weaponListPadding = Instance.new("UIPadding")
+weaponListPadding.PaddingTop = UDim.new(0,3)
+weaponListPadding.PaddingBottom = UDim.new(0,3)
+weaponListPadding.PaddingLeft = UDim.new(0,3)
+weaponListPadding.PaddingRight = UDim.new(0,3)
+weaponListPadding.Parent = weaponScrollFrame
+
+-- Visual weapon names only. Clicking them does nothing.
+local ItemsTabAllowedNames = {
+	"Corrupt",
+	"Chroma Traveler's Gun",
+	"Chroma Evergun",
+	"Chroma Evergreen",
+	"Chroma Bauble",
+	"Chroma Vampire's Gun",
+	"Chroma Constellation",
+	"Chroma Alienbeam",
+	"Chroma Raygun",
+	"Chroma Sunrise",
+	"Chroma Snowcannon",
+	"Chroma Blizzard",
+	"Chroma Sunset",
+	"Chroma Snow Dagger",
+	"Chroma Heart Wand",
+	"Chroma Treat",
+	"Chroma Snowstorm",
+	"Chroma Watergun",
+	"Chroma Sweet",
+	"Chroma Ornament",
+	"Gingerscope",
+	"Traveler's Axe",
+	"Traveler's Gun",
+	"Evergreen",
+	"Evergun",
+	"Celestial",
+	"Constellation",
+	"Turkey",
+	"Alienbeam",
+	"Raygun",
+	"Vampire's Axe",
+	"Vampire's Gun",
+	"Darkshot",
+	"Darksword",
+	"Blossom",
+	"Sakura",
+	"Sunset",
+	"Sunrise",
+	"Bauble",
+	"Snowcannon",
+	"Heart Wand",
+	"Snowstorm",
+	"Snow Dagger",
+	"Blizzard",
+	"Treat",
+	"Watergun",
+	"Sweet",
+	"Ornament",
+	"Harvester",
+	"Icepiercer",
+	"Bloom",
+	"Flora",
+	"Rainbow",
+	"Rainbow Gun",
+}
+
+for _, name in ipairs(ItemsTabAllowedNames) do
+	local weaponBtn = Instance.new("TextButton")
+	weaponBtn.Size = UDim2.new(1,-6,0,22)
+	weaponBtn.BackgroundColor3 = Color3.fromRGB(50,50,70)
+	weaponBtn.BackgroundTransparency = 0.2
+	weaponBtn.Text = name
+	weaponBtn.Font = Enum.Font.SourceSans
+	weaponBtn.TextSize = 12
+	weaponBtn.TextColor3 = Color3.fromRGB(255,255,255)
+	weaponBtn.TextXAlignment = Enum.TextXAlignment.Left
+	weaponBtn.TextTruncate = Enum.TextTruncate.AtEnd
+	weaponBtn.Parent = weaponScrollFrame
+
+	local padding = Instance.new("UIPadding")
+	padding.PaddingLeft = UDim.new(0,6)
+	padding.PaddingRight = UDim.new(0,6)
+	padding.Parent = weaponBtn
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0,4)
+	corner.Parent = weaponBtn
+
+	weaponBtn.MouseEnter:Connect(function()
+		TweenService:Create(weaponBtn,TweenInfo.new(0.15),{
+			BackgroundColor3 = Color3.fromRGB(80,80,100)
+		}):Play()
+	end)
+
+	weaponBtn.MouseLeave:Connect(function()
+		TweenService:Create(weaponBtn,TweenInfo.new(0.15),{
+			BackgroundColor3 = Color3.fromRGB(50,50,70)
+		}):Play()
+	end)
+
+	weaponBtn.MouseButton1Click:Connect(function()
+		-- Disabled
+	end)
+end
+
+-- ============================================================
+-- MISC TAB
+-- ============================================================
+
+local SpawnerAmountBox = createSettingRow(
+	"Amount per click (0 = random):",
+	"0",
+	miscFrame
+)
+
+CreateSpace(miscFrame)
+
+local SpawnerSearchBox = createSettingRow(
+	"Search weapon:",
+	"",
+	miscFrame
+)
+
+CreateSpace(miscFrame)
+
+local spawnerStatusLabel = Instance.new("TextLabel")
+spawnerStatusLabel.Size = UDim2.new(1,0,0,15)
+spawnerStatusLabel.BackgroundTransparency = 1
+spawnerStatusLabel.Text = "Click weapon to spawn:"
+spawnerStatusLabel.Font = Enum.Font.SourceSansSemibold
+spawnerStatusLabel.TextSize = 12
+spawnerStatusLabel.TextColor3 = Color3.fromRGB(0,255,100)
+spawnerStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+spawnerStatusLabel.Parent = miscFrame
+
+CreateButton(miscFrame, "Spawn High Tier (Tradable)")
+
+CreateSpace(miscFrame)
+
+CreateButton(miscFrame, "Purge untradables from inventory")
+
+CreateSpace(miscFrame)
+
+local spawnerScrollFrame = Instance.new("ScrollingFrame")
+spawnerScrollFrame.Size = UDim2.new(1,0,0,120)
+spawnerScrollFrame.BackgroundColor3 = Color3.fromRGB(25,25,35)
+spawnerScrollFrame.BackgroundTransparency = 0.3
+spawnerScrollFrame.BorderSizePixel = 0
+spawnerScrollFrame.ScrollBarThickness = 6
+spawnerScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100,100,255)
+spawnerScrollFrame.CanvasSize = UDim2.new(0,0,0,0)
+spawnerScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+spawnerScrollFrame.Parent = miscFrame
+
+local spawnerCorner = Instance.new("UICorner")
+spawnerCorner.CornerRadius = UDim.new(0,5)
+spawnerCorner.Parent = spawnerScrollFrame
+
+local spawnerStroke = Instance.new("UIStroke")
+spawnerStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+spawnerStroke.Color = Color3.fromRGB(80,80,120)
+spawnerStroke.Thickness = 1
+spawnerStroke.Parent = spawnerScrollFrame
+
+local spawnerLayout = Instance.new("UIListLayout")
+spawnerLayout.FillDirection = Enum.FillDirection.Vertical
+spawnerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+spawnerLayout.Padding = UDim.new(0,2)
+spawnerLayout.Parent = spawnerScrollFrame
+
+local spawnerPadding = Instance.new("UIPadding")
+spawnerPadding.PaddingTop = UDim.new(0,3)
+spawnerPadding.PaddingBottom = UDim.new(0,3)
+spawnerPadding.PaddingLeft = UDim.new(0,3)
+spawnerPadding.PaddingRight = UDim.new(0,3)
+spawnerPadding.Parent = spawnerScrollFrame
+
+for _, name in ipairs(ItemsTabAllowedNames) do
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(1,-6,0,22)
+	btn.BackgroundColor3 = Color3.fromRGB(50,50,70)
+	btn.BackgroundTransparency = 0.2
+	btn.Text = name
+	btn.Font = Enum.Font.SourceSans
+	btn.TextSize = 12
+	btn.TextColor3 = Color3.fromRGB(255,255,255)
+	btn.TextXAlignment = Enum.TextXAlignment.Left
+	btn.TextTruncate = Enum.TextTruncate.AtEnd
+	btn.Parent = spawnerScrollFrame
+
+	local padding = Instance.new("UIPadding")
+	padding.PaddingLeft = UDim.new(0,6)
+	padding.PaddingRight = UDim.new(0,6)
+	padding.Parent = btn
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0,4)
+	corner.Parent = btn
+
+	btn.MouseEnter:Connect(function()
+		TweenService:Create(btn,TweenInfo.new(0.15),{
+			BackgroundColor3 = Color3.fromRGB(80,80,100)
+		}):Play()
+	end)
+
+	btn.MouseLeave:Connect(function()
+		TweenService:Create(btn,TweenInfo.new(0.15),{
+			BackgroundColor3 = Color3.fromRGB(50,50,70)
+		}):Play()
+	end)
+
+	btn.MouseButton1Click:Connect(function()
+		-- Disabled
+	end)
+end
+
+-- Search boxes still visually filter the displayed names.
+local function connectVisualSearch(box, container)
+	box:GetPropertyChangedSignal("Text"):Connect(function()
+		local q = string.lower(box.Text or "")
+		for _, child in ipairs(container:GetChildren()) do
+			if child:IsA("TextButton") then
+				local text = string.lower(child.Text or "")
+				child.Visible = q == "" or string.find(text,q,1,true) ~= nil
+			end
+		end
+	end)
+end
+
+connectVisualSearch(ItemToAddPartnerBox, weaponScrollFrame)
+connectVisualSearch(SpawnerSearchBox, spawnerScrollFrame)
+
+-- Keep the GUI responsive when resized.
+local function updateScrollHeight(frame, scroll)
+	local offsetY = scroll.AbsolutePosition.Y - frame.AbsolutePosition.Y
+	local available = frame.AbsoluteSize.Y - offsetY - 4
+	scroll.Size = UDim2.new(1,0,0,math.max(80,available))
+end
+
+itemsFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+	updateScrollHeight(itemsFrame, weaponScrollFrame)
+end)
+
+miscFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+	updateScrollHeight(miscFrame, spawnerScrollFrame)
+end)
+
+task.defer(function()
+	updateScrollHeight(itemsFrame, weaponScrollFrame)
+	updateScrollHeight(miscFrame, spawnerScrollFrame)
+end)
